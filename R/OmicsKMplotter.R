@@ -62,7 +62,7 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList) {
                        by = "bcr_patient_barcode") %>%
       dplyr::select(times, bcr_patient_barcode, patient.vital_status, Hugo_Symbol) -> data.clinical_mutations
     slimZ=data.clinical_mutations %>%
-      count(bcr_patient_barcode, Hugo_Symbol) %>%
+      dplyr::count(bcr_patient_barcode, Hugo_Symbol) %>%
       tidyr::spread(Hugo_Symbol, n, fill = 0)
     jointdataset1 <-merge (data.surv,slimZ , by.x = 'bcr_patient_barcode', by.y ='bcr_patient_barcode')
     d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
