@@ -4,10 +4,10 @@
 #' @param UserList vector containing any number of target genes/proteins/probes of interest using TCGA/RTCGA format for the corresponding datasettypes (ex. when using miRNASeq datasettype: UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3"), rnaseq: UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719"), RPPA:UserList=c("ACC1", "AR", "ACVRL1"), mRNA: UserList=c("ELMO2", "CREB3L1", "PNMA1"), methylation: UserList= c("cg00000292","cg00002426","cg00003994"), mutations: UserList= c("TP53", "PIK3CA", "SOX15", "MSH3")
 #' @return graph of Kaplan Meier survival curve with n categories of patients based on selected number of target features and two possible categories for each (high and low expression)
 #' @export export this function
-#' @examples KMomics(cancertype= "OV", datasettype = "miRNASeq", UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3")) or KMomics(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719")) or KMomics(cancertype= "OV", datasettype = "RPPA", UserList=c("ACC1", "AR", "ACVRL1")) or KMomics(cancertype= "OV", datasettype = "mRNA", UserList=c("ELMO2", "CREB3L1", "PNMA1")) or KMomics(cancertype= "BRCA", datasettype = "methylation", UserList= c("cg00000292","cg00002426","cg00003994")) or KMomics(cancertype= "BRCA", datasettype = "mutations", UserList= c("TP53", "PIK3CA", "SOX15", "MSH3"))
+#' @examples OmicsKMplotter(cancertype= "OV", datasettype = "miRNASeq", UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3")) or OmicsKMplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719")) or OmicsKMplotter(cancertype= "OV", datasettype = "RPPA", UserList=c("ACC1", "AR", "ACVRL1")) or OmicsKMplotter(cancertype= "OV", datasettype = "mRNA", UserList=c("ELMO2", "CREB3L1", "PNMA1")) or OmicsKMplotter(cancertype= "BRCA", datasettype = "methylation", UserList= c("cg00000292","cg00002426","cg00003994")) or OmicsKMplotter(cancertype= "BRCA", datasettype = "mutations", UserList= c("TP53", "PIK3CA", "SOX15", "MSH3"))
 #' @importFrom magrittr %>%
 
-KMomicsplotter<- function(cancertype, datasettype, UserList) {
+OmicsKMplotter<- function(cancertype, datasettype, UserList) {
 
   j=paste("RTCGA.",datasettype, "::", sep ="", rlang::parse_expr(paste(cancertype, datasettype, sep=".")))
   c=rlang::parse_expr(j)
@@ -158,10 +158,10 @@ KMomicsplotter<- function(cancertype, datasettype, UserList) {
 }
 
 ####examples of using function and it works
-#KMomicsplotter(cancertype= "OV", datasettype = "miRNASeq", UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3"))
-#KMomicsplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719"))
-#KMomicsplotter(cancertype= "OV", datasettype = "RPPA", UserList=c("ACC1", "AR", "ACVRL1"))
-#KMomicsplotter(cancertype= "OV", datasettype = "mRNA", UserList=c("ELMO2", "CREB3L1", "PNMA1"))
-#KMomicsplotter(cancertype= "BRCA", datasettype = "methylation", UserList= c("cg00000292","cg00002426","cg00003994"))
-#KMomicsplotter(cancertype= "BRCA", datasettype = "mutations", UserList= c("TP53", "PIK3CA", "SOX15", "MSH3"))
+#OmicsKMplotter(cancertype= "OV", datasettype = "miRNASeq", UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3"))
+#OmicsKMplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719"))
+#OmicsKMplotter(cancertype= "OV", datasettype = "RPPA", UserList=c("ACC1", "AR", "ACVRL1"))
+#OmicsKMplotter(cancertype= "OV", datasettype = "mRNA", UserList=c("ELMO2", "CREB3L1", "PNMA1"))
+#OmicsKMplotter(cancertype= "BRCA", datasettype = "methylation", UserList= c("cg00000292","cg00002426","cg00003994"))
+#OmicsKMplotter(cancertype= "BRCA", datasettype = "mutations", UserList= c("TP53", "PIK3CA", "SOX15", "MSH3"))
 
