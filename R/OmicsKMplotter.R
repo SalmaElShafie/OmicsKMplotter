@@ -7,17 +7,17 @@
 #' @examples OmicsKMplotter(cancertype= "OV", datasettype = "miRNASeq", UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3")) or OmicsKMplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719")) or OmicsKMplotter(cancertype= "OV", datasettype = "RPPA", UserList=c("ACC1", "AR", "ACVRL1")) or OmicsKMplotter(cancertype= "OV", datasettype = "mRNA", UserList=c("ELMO2", "CREB3L1", "PNMA1")) or OmicsKMplotter(cancertype= "BRCA", datasettype = "methylation", UserList= c("cg00000292","cg00002426","cg00003994")) or OmicsKMplotter(cancertype= "BRCA", datasettype = "mutations", UserList= c("TP53", "PIK3CA", "SOX15", "MSH3"))
 #' @importFrom magrittr %>%
 
-OmicsKMplotter<- function(cancertype, datasettype, UserList) {
-
+OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", legend="labels") {
+  ##fetching datasettype of given cancertype from TCGA using RTCGA
   j=paste("RTCGA.",datasettype, "::", sep ="", rlang::parse_expr(paste(cancertype, datasettype, sep=".")))
   c=rlang::parse_expr(j)
   SelectedDataset=data.frame()
-
+  ##fetching clinical data of given cancertype cohort from TCGA using RTCGA
   d=paste0("RTCGA.clinical::",rlang::parse_expr(paste0(cancertype, ".clinical")))
   e=rlang::parse_expr(d)
   as.data.frame(eval(e)) ->>clinical_Set
 
-
+  ##different processing of each dataset for subsequent KM analysis
   if (datasettype == "miRNASeq") {
     as.data.frame(eval(c)) -> SelectedDataset
     sd= dplyr::filter(SelectedDataset, miRNA_ID =="reads_per_million_miRNA_mapped")
@@ -26,21 +26,8 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList) {
     UserList= gsub("-","",UserList)
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='bcr_patient_barcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
-    for(i in 1: length(UserList))
-    {
-      Surv_features_Per_miRNA<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, mean(as.numeric(Surv_features[,UserList[i]])), Inf), labels=c("Low","High"))
-
-      Surv_features <-cbind(Surv_features,Surv_features_Per_miRNA )
-      names(Surv_features)[names(Surv_features) == "Surv_features_Per_miRNA"] <-paste(UserList[i],"Cat",sep="")
-    }
-    UserList= paste(UserList,"Cat", sep = "")
-    d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
-    ffit <- survminer::surv_fit(as.formula(d) , data=Surv_features) #####works toooooo!!!
-    graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
-    return(graph)
-  }
-
-  else if (datasettype == "mutations") {
+    
+}  else if (datasettype == "mutations") {
     as.data.frame(eval(c)) -> SelectedDataset
     ee=rlang::parse_expr(paste0(cancertype, ".clinical"))
     #RTCGA::survivalTCGA(eval(ee)) -> data.surv
@@ -66,46 +53,28 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList) {
       tidyr::spread(Hugo_Symbol, n, fill = 0)
     jointdataset1 <-merge (data.surv,slimZ , by.x = 'bcr_patient_barcode', by.y ='bcr_patient_barcode')
     d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
-    ffit <- survminer::surv_fit(as.formula(d) , data=jointdataset1) #####works toooooo!!!
+    ffit <- survminer::surv_fit(as.formula(d) , data=jointdataset1) 
     graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
-    return(graph)
-  }
-  else if (datasettype== "methylation") {
+    graph$plot <- graph$plot +
+    theme(legend.text = element_text(size = 8, color = "black", face = "bold"))
+    names=names(ffit$strata)
+    liss=list(graph, names)
+    return(liss)
+    break
+  
+ } else if (datasettype== "methylation") {
     as.data.frame(eval(c)) ->SelectedDataset
     SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='patient.bcr_patient_barcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
-    for(i in 1: length(UserList))
-    {
-      Surv_features_Per_mRNA<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, mean(as.numeric(Surv_features[,UserList[i]])), Inf), labels=c("Low","High"))
-
-      Surv_features <-cbind(Surv_features,Surv_features_Per_mRNA )
-      names(Surv_features)[names(Surv_features) == "Surv_features_Per_mRNA"] <-paste(UserList[i],"Cat",sep="")
-    }
-    UserList= paste(UserList,"Cat", sep = "")
-    d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
-    ffit <- survminer::surv_fit(as.formula(d) , data=Surv_features) #####works toooooo!!!
-    graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
-    return(graph)
-  }
-  else if (datasettype == "mRNA") {
+    
+ } else if (datasettype == "mRNA") {
     as.data.frame(eval(c)) ->SelectedDataset
     SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='patient.bcr_patient_barcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
-    for(i in 1: length(UserList))
-    {
-      Surv_features_Per_mRNA<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, mean(as.numeric(Surv_features[,UserList[i]])), Inf), labels=c("Low","High"))
-      Surv_features <-cbind(Surv_features,Surv_features_Per_mRNA )
-      names(Surv_features)[names(Surv_features) == "Surv_features_Per_mRNA"] <-paste(UserList[i],"Cat",sep="")
-    }
-    UserList= paste(UserList,"Cat", sep = "")
-    d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
-    ffit <- survminer::surv_fit(as.formula(d) , data=Surv_features) #####works toooooo!!!
-    graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
-    return(graph)
-  }
-  else if (datasettype == "RPPA") {
+    
+ } else if (datasettype == "RPPA") {
     as.data.frame(eval(c)) ->SelectedDataset
     #return(RPPA_Set)
     SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
@@ -119,19 +88,8 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList) {
     UserList= paste("p", UserList, sep="")
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='patient.bcrpatientbarcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
-    for(i in 1: length(UserList))
-    {
-      Surv_features_Per_RPPA<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, mean(as.numeric(Surv_features[,UserList[i]])), Inf), labels=c("Low","High"))
-      Surv_features <-cbind(Surv_features,Surv_features_Per_RPPA )
-      names(Surv_features)[names(Surv_features) == "Surv_features_Per_RPPA"] <-paste(UserList[i],"Cat",sep="")
-    }
-    UserList= paste(UserList,"Cat", sep = "")
-    d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
-    ffit <- survminer::surv_fit(as.formula(d) , data=Surv_features) #####works toooooo!!!
-    graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
-    return(graph)
-  }
-  else if (datasettype =="rnaseq") {
+    
+  } else if (datasettype =="rnaseq") {
     as.data.frame(eval(c)) ->SelectedDataset
     SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     colnames(SelectedDataset)=gsub("[?][|]", "g", colnames(SelectedDataset))
@@ -140,28 +98,62 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList) {
     UserList = gsub("[|]", "",UserList)
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='patient.bcr_patient_barcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
-    for(i in 1: length(UserList))
-    {
-      Surv_features_Per_rnaseq<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, mean(as.numeric(Surv_features[,UserList[i]])), Inf), labels=c("Low","High"))
-      Surv_features <-cbind(Surv_features,Surv_features_Per_rnaseq )
-      names(Surv_features)[names(Surv_features) == "Surv_features_Per_rnaseq"] <-paste(UserList[i],"Cat",sep="")
-    }
-    UserList= paste(UserList,"Cat", sep = "")
-    d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
-    ffit <- survminer::surv_fit(as.formula(d) , data=Surv_features) #####works toooooo!!!
-    shortest= c(paste0(gene1, "=0, ", gene2, "=0"), paste0(gene1, "=0, ", gene2, "=1"), paste0(gene1, "=1, ", gene2, "=0"), paste0(gene1, "=1, ", gene2, "=1"))
-    names(sfit$strata) = shortest
-    graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
-    return(graph)
+   
   }
 
+    ##defining feature cutoffs for categorizing patients into high and low expression for KM plot features (mean, median or 75% quartile)
+    if (cutoff == "mean") {
+      for(i in 1: length(UserList))
+      {
+        Surv_features_1<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, mean(as.numeric(Surv_features[,UserList[i]]), na.rm= TRUE), Inf), labels=c("Low","High"))
+        Surv_features <-cbind(Surv_features,Surv_features_1 )
+        names(Surv_features)[names(Surv_features) == "Surv_features_1"] <- paste(UserList[i],"Cat",sep="")
+      }
+
+    } else if (cutoff=="quantile") {
+      for(i in 1: length(UserList))
+      {
+        Surv_features_1<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, quantile(as.numeric(Surv_features[,UserList[i]]),na.rm= TRUE)[4], Inf), labels=c("Low","High"))
+        Surv_features <-cbind(Surv_features,Surv_features_1 )
+        names(Surv_features)[names(Surv_features) == "Surv_features_1"] <- paste(UserList[i],"Cat",sep="")
+      }
+
+    } else if (cutoff=="median"){
+      for(i in 1: length(UserList))
+      {
+        Surv_features_1<- cut(as.numeric(Surv_features[,UserList[i]]), breaks=c(-Inf, quantile(as.numeric(Surv_features[,UserList[i]]),na.rm= TRUE)[3], Inf), labels=c("Low","High"))
+        Surv_features <-cbind(Surv_features,Surv_features_1 )
+        names(Surv_features)[names(Surv_features) == "Surv_features_1"] <- paste(UserList[i],"Cat",sep="")
+      }
+    }
+
+    UserList= paste(UserList,"Cat", sep = "")
+    d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
+    ffit <- survminer::surv_fit(as.formula(d) , data=Surv_features)
+    names=names(ffit$strata)
+    ##for selection of whether labels of categories show in the graph or categories are just numbered then identified from function output on console (useful when labels of categories are too long and don't show properly on graph)
+    if (legend == "labels") {
+      graph=  survminer::ggsurvplot(ffit, conf.int=FALSE, pval=FALSE)
+      graph$plot <- graph$plot +
+        theme(legend.text = element_text(size = 8, color = "black", face = "bold"))
+
+    } else if (legend=="numbers") {
+      graph=  survminer::ggsurvplot(ffit, conf.int=FALSE, pval=FALSE, legend.labs=c(1:length(names)) )
+      graph$plot <- graph$plot +
+        theme(legend.text = element_text(size = 8, color = "black", face = "bold"))
+    }
+  
+    liss=list(graph, names)
+    return(liss)
 }
 
-####examples of using function and it works
+####examples of using this function and it works
 #OmicsKMplotter(cancertype= "OV", datasettype = "miRNASeq", UserList=c("hsa-let-7d","hsa-let-7e", "hsa-let-7a3"))
-#OmicsKMplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719"))
+#OmicsKMplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719"), cutoff= "mean", legend= "numbers")
+#OmicsKMplotter(cancertype= "OV", datasettype = "rnaseq", UserList=c("AADAC|13", "AADAT|51166", "AAGAB|79719"), cutoff= "quantile")
 #OmicsKMplotter(cancertype= "OV", datasettype = "RPPA", UserList=c("ACC1", "AR", "ACVRL1"))
 #OmicsKMplotter(cancertype= "OV", datasettype = "mRNA", UserList=c("ELMO2", "CREB3L1", "PNMA1"))
 #OmicsKMplotter(cancertype= "BRCA", datasettype = "methylation", UserList= c("cg00000292","cg00002426","cg00003994"))
 #OmicsKMplotter(cancertype= "BRCA", datasettype = "mutations", UserList= c("TP53", "PIK3CA", "SOX15", "MSH3"))
+
 
