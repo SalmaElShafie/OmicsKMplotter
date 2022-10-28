@@ -54,7 +54,7 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", lege
     jointdataset1 <-merge (data.surv,slimZ , by.x = 'bcr_patient_barcode', by.y ='bcr_patient_barcode')
     d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
     ffit <- survminer::surv_fit(as.formula(d) , data=jointdataset1) 
-    graph=  survminer::ggsurvplot(ffit, conf.int=TRUE, pval=TRUE)
+    graph=  survminer::ggsurvplot(ffit, conf.int=FALSE, pval=FALSE)
     graph$plot <- graph$plot +
     theme(legend.text = element_text(size = 8, color = "black", face = "bold"))
     names=names(ffit$strata)
