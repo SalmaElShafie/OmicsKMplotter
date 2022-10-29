@@ -7,8 +7,9 @@ So, for any n number of user-selected targets, n^2 categories and therefore n^2 
 
 ## cutomizable options
 
-the KM plot can be drawn by categorizing patients based on expression wih the mean (default) being the cutoff between the 2 categories, or median, or 75% quantile, which is selected by the user in the argument cutoff="mean", "median" or "quantile"
-based on the number of targets/features and therefore categories on the KM plot, the legend could become lengthy and not readable on the graph, therefore using the argument legend="labels" (default) or "numbers", addresses this
+1. The KM plot can be drawn by categorizing patients based on expression with the mean (default) being the cutoff between the 2 categories, or median, or 75% quantile, which is selected by the user in the argument cutoff="mean", "median" or "quantile"
+
+2. Based on the number of targets/features and therefore categories on the KM plot, the legend could become lengthy and not readable on the graph, therefore using the argument legend="labels" (default) or "numbers", addresses this
 
 ## installing OmicsKMplotter
 
