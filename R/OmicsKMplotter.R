@@ -32,7 +32,7 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", lege
     ee=rlang::parse_expr(paste0(cancertype, ".clinical"))
     #RTCGA::survivalTCGA(eval(ee)) -> data.surv
     RTCGA::survivalTCGA(clinical_Set) -> data.surv
-    SelectedDataset dplyr::%>% dplyr::mutate(bcr_patient_barcode = substr(bcr_patient_barcode, 1, 12)) dplyr::%>%
+    SelectedDataset = dplyr::mutate(SelectedDataset, bcr_patient_barcode = substr(bcr_patient_barcode, 1, 12)) dplyr::%>%
       dplyr::select(bcr_patient_barcode) dplyr::%>%
       unique -> patients_with_mutations_information
     data.surv dplyr::%>%
