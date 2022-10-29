@@ -21,7 +21,7 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", lege
   if (datasettype == "miRNASeq") {
     as.data.frame(eval(c)) -> SelectedDataset
     sd= dplyr::filter(SelectedDataset, miRNA_ID =="reads_per_million_miRNA_mapped")
-    SelectedDataset= sd %>% dplyr::mutate(bcr_patient_barcode= tolower(substr(rownames(sd), 1, 12)))
+    SelectedDataset= sd dplyr::%>% dplyr::mutate(bcr_patient_barcode= tolower(substr(rownames(sd), 1, 12)))
     colnames(SelectedDataset) = gsub("-","",colnames(SelectedDataset))
     UserList= gsub("-","",UserList)
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='bcr_patient_barcode')
@@ -32,24 +32,23 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", lege
     ee=rlang::parse_expr(paste0(cancertype, ".clinical"))
     #RTCGA::survivalTCGA(eval(ee)) -> data.surv
     RTCGA::survivalTCGA(clinical_Set) -> data.surv
-    SelectedDataset %>%
-      dplyr::mutate(bcr_patient_barcode = substr(bcr_patient_barcode, 1, 12)) %>%
-      dplyr::select(bcr_patient_barcode) %>%
+    SelectedDataset dplyr::%>% dplyr::mutate(bcr_patient_barcode = substr(bcr_patient_barcode, 1, 12)) dplyr::%>%
+      dplyr::select(bcr_patient_barcode) dplyr::%>%
       unique -> patients_with_mutations_information
-    data.surv %>%
+    data.surv dplyr::%>%
       dplyr::filter(bcr_patient_barcode %in%
                       patients_with_mutations_information$bcr_patient_barcode) -> patients_with_survival_and_mutations_info
-    SelectedDataset %>%
-      dplyr::filter(Hugo_Symbol %in% UserList) %>%
-      dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% # cancer tissue
+    SelectedDataset dplyr::%>%
+      dplyr::filter(Hugo_Symbol %in% UserList) dplyr::%>%
+      dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") dplyr::%>% # cancer tissue
       dplyr::mutate(bcr_patient_barcode = substr(bcr_patient_barcode, 1, 12))  -> data.mutations
 
-    patients_with_survival_and_mutations_info %>%
+    patients_with_survival_and_mutations_info dplyr::%>%
       dplyr::left_join(data.mutations,
-                       by = "bcr_patient_barcode") %>%
+                       by = "bcr_patient_barcode") dplyr::%>%
       dplyr::select(times, bcr_patient_barcode, patient.vital_status, Hugo_Symbol) -> data.clinical_mutations
-    slimZ=data.clinical_mutations %>%
-      dplyr::count(bcr_patient_barcode, Hugo_Symbol) %>%
+    slimZ=data.clinical_mutations dplyr::%>%
+      dplyr::count(bcr_patient_barcode, Hugo_Symbol) dplyr::%>%
       tidyr::spread(Hugo_Symbol, n, fill = 0)
     jointdataset1 <-merge (data.surv,slimZ , by.x = 'bcr_patient_barcode', by.y ='bcr_patient_barcode')
     d=rlang::parse_expr(paste0("survival::Surv(times, patient.vital_status)~",(paste(UserList, collapse=" + "))))
@@ -64,20 +63,20 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", lege
   
  } else if (datasettype== "methylation") {
     as.data.frame(eval(c)) ->SelectedDataset
-    SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
+    SelectedDataset=SelectedDataset dplyr::%>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") dplyr::%>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='patient.bcr_patient_barcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
     
  } else if (datasettype == "mRNA") {
     as.data.frame(eval(c)) ->SelectedDataset
-    SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
+    SelectedDataset=SelectedDataset dplyr::%>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") dplyr::%>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     jointdataset <-merge (clinical_Set,SelectedDataset , by.x = 'patient.bcr_patient_barcode', by.y ='patient.bcr_patient_barcode')
     Surv_features<- RTCGA::survivalTCGA(jointdataset, extract.cols=UserList)
     
  } else if (datasettype == "RPPA") {
     as.data.frame(eval(c)) ->SelectedDataset
     #return(RPPA_Set)
-    SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
+    SelectedDataset=SelectedDataset dplyr::%>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") dplyr::%>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     colnames(SelectedDataset)=gsub("-", "", colnames(SelectedDataset))
     colnames(SelectedDataset)=gsub("_", "", colnames(SelectedDataset))
     lista=colnames(SelectedDataset)
@@ -91,7 +90,7 @@ OmicsKMplotter<- function(cancertype, datasettype, UserList, cutoff="mean", lege
     
   } else if (datasettype =="rnaseq") {
     as.data.frame(eval(c)) ->SelectedDataset
-    SelectedDataset=SelectedDataset %>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") %>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
+    SelectedDataset=SelectedDataset dplyr::%>% dplyr::filter(substr(bcr_patient_barcode, 14, 15) == "01") dplyr::%>% dplyr::mutate(patient.bcr_patient_barcode = tolower(substr(bcr_patient_barcode, 1, 12)))
     colnames(SelectedDataset)=gsub("[?][|]", "g", colnames(SelectedDataset))
     colnames(SelectedDataset)=gsub("[|]", "", colnames(SelectedDataset))
     UserList = gsub("[?][|]","g",UserList)
